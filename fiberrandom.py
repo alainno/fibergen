@@ -184,10 +184,12 @@ class FiberSample():
         #waves.append([50, 1, 70, 20, 80, 30, 90, 40])
 
         for i in range(total):
-            waves.append(self.createFiberWave())
+            ancho = randint(3, 6)/100
+            alto = (randint(5,60)/100)/ancho
+            waves.append(self.createFiberWave(ancho, alto))
         return waves
 
-    def createFiberWave(self):
+    def createFiberWave(self, ancho=0.05, alto=5):
 
         #fiberSample = FiberSample(256, 256)
         # trazar una línea aleatoria con u radomness
@@ -205,7 +207,8 @@ class FiberSample():
         # print('time:', time)
 
         # generar amplitud
-        amplitude = np.sin(0.05 * time)
+        #amplitude = np.sin(0.05 * time)
+        amplitude = np.sin(ancho * time)
         # print('amplitud:', amplitude)
 
         # obtener angulo de la recta aleatoria
@@ -219,7 +222,8 @@ class FiberSample():
 
         sine_points = []
         rotated_points = []
-        pond = 5
+        #pond = 5
+        pond = alto
         #mitad = fiberSample.height / 2
 
         for i, a in enumerate(amplitude):
@@ -260,11 +264,15 @@ if __name__ == "__main__":
     #createFiberImage(size, width, testDir)
 
     print('Generate fiber sample with random widths')
+
     #img = fiberSample.createFiberSample(10, 1, 5)
     img = fiberSample.createFiberWavedSample(10, 2, 12)
     img = ImageOps.invert(img)
-    img.save("img/sample-artificial.png", "PNG")
+    #img.save("img/sample-artificial.png", "PNG")
     img.show()
+
+    
+
     
     '''
     testDir = "data/test"
