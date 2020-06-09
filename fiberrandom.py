@@ -5,8 +5,6 @@ import numpy as np
 from tqdm import tqdm
 import os, shutil
 
-from functions import emptyDir
-
 class FiberSample():
     '''
     Clase para generar imágenes artificiales de fibra de alpaca
@@ -260,6 +258,9 @@ class FiberSample():
 
 
 if __name__ == "__main__":
+
+    from functions import emptyDir
+    
     fiberSample = FiberSample(256,256)
     #createFiberImage(size, width, testDir)
 
