@@ -9,10 +9,11 @@ class FiberSample():
     '''
     Clase para generar imágenes artificiales de fibra de alpaca
     '''
-    def __init__(self, width=256, height=256):
+    def __init__(self, width=256, height=256, printout=True):
         self.width = width
         self.height = height
         #print("Width: ", str(self.witdh))
+        self.printout = printout
 
     def perpendicular_y(self,m,x1,y1,x):
         return (y1 - (x - x1)/m)
@@ -26,7 +27,8 @@ class FiberSample():
         cx, cy = self.width / 2, self.height / 2
         x1, y1 = cx + dx, cy + dy
 
-        print('x1:', x1, 'y1:', y1)
+        if self.printout:
+            print('x1:', x1, 'y1:', y1)
 
         x = 0
         y = self.perpendicular_y(m, x1, y1, x)
@@ -121,7 +123,8 @@ class FiberSample():
         dx = self.randValue(xlimit-1)*cuadrante_a
         dy = self.randValue(ylimit-1)*cuadrante_b
 
-        print('dx:', dx, 'dy:', dy)
+        if self.printout:
+            print('dx:', dx, 'dy:', dy)
 
         return [(xlimit, ylimit), (dx+xlimit, dy+ylimit)]
 
@@ -134,10 +137,10 @@ class FiberSample():
 
         m = (y1-cy) / (x1-cx)
 
-        print('m:', m)
-
-        print('x1:', x1)
-        print('y1:', y1)
+        if self.printout:
+            print('m:', m)
+            print('x1:', x1)
+            print('y1:', y1)
 
         x = 0
         y = self.perpendicular_y(m, x1, y1, x) # y1 - (x - x1) / m
@@ -195,12 +198,14 @@ class FiberSample():
         #print('Recta aleatoria:', points)
 
         perp_points = self.getPerpendicular(points)
-        print('Recta perpendicular:', perp_points)
+        if self.printout:
+            print('Recta perpendicular:', perp_points)
 
         # trazar onda senoidal
         # obtener la longitud de la recta aleatoria (time)
         distance = self.getDistance(perp_points)
-        print('distance:', round(distance))
+        if self.printout:
+            print('distance:', round(distance))
         time = np.arange(0, distance, 1)
         # print('time:', time)
 
@@ -214,7 +219,8 @@ class FiberSample():
         x2, y2 = perp_points[1]
         m = (y2 - y1) / (x2 - x1)
         angle = math.atan(m)
-        print('angle:', math.degrees(angle))
+        if self.printout:
+            print('angle:', math.degrees(angle))
 
         # rotar
 

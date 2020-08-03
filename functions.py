@@ -23,13 +23,13 @@ def drawFibers(sample_image, waves, min_thickness, max_thickness):
         wave = wave.reshape((-1,1,2))
         cv2.polylines(sample_image,[wave],False,(255,255,255), randint(min_thickness,max_thickness), cv2.LINE_AA)
 
-def createSamples(directory, size, samples, thickness, fibers):
-    fiber_sample = FiberSample(size[0], size[1])
+def createSamples(directory, size, samples, thickness, fibers, extension="png", printout=True):
+    fiber_sample = FiberSample(size[0], size[1], printout)
     for i in range(0,samples):
         waves = fiber_sample.createRandomWaves(randint(fibers[0],fibers[1]))
         sample_image = np.zeros((size[0], size[1], 3), np.uint8)
         drawFibers(sample_image, waves, thickness[0], thickness[1])
-        cv2.imwrite(directory + "/" + str(i + 1).zfill(4) + ".png", sample_image)
+        cv2.imwrite(directory + "/" + str(i + 1).zfill(4) + "." + extension, sample_image)
 
 def initDirectory(path):
     if(os.path.isdir(path)):
