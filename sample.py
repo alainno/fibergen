@@ -17,8 +17,8 @@ THIN_DIR = "thin"
 THICK_DIR = "thick"
 
 thin_directory = os.path.join(os.getcwd(), DATA_DIR, TRAIN_DIR, THIN_DIR)
-train_samples = 10
-thin_thickness = (1,3)
+train_samples = 2000
+thin_thickness = (1,2)
 sample_fibers = (2,20)
 sample_size = (sample_width, sample_height)
 
@@ -28,13 +28,13 @@ createSamples(thin_directory, sample_size, train_samples, thin_thickness, sample
 
 #
 thick_directory = os.path.join(os.getcwd(), DATA_DIR, TRAIN_DIR, THICK_DIR)
-thick_thickness = (4,7)
+thick_thickness = (6,7)
 initDirectory(thick_directory)
 createSamples(thick_directory, sample_size, train_samples, thick_thickness, sample_fibers)
 
 #
 thin_directory_val = os.path.join(os.getcwd(), DATA_DIR, VAL_DIR, THIN_DIR)
-val_samples = 2
+val_samples = 400
 initDirectory(thin_directory_val)
 createSamples(thin_directory_val, sample_size, val_samples, thin_thickness, sample_fibers)
 
