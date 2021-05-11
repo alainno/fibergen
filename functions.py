@@ -5,6 +5,7 @@ from fiberrandom import FiberSample
 import os
 import json
 import random
+import colorsys
 
 def emptyDir(folder):
     '''
@@ -20,6 +21,10 @@ def emptyDir(folder):
             print(e)
 
 def drawFibers(sample_image, waves, min_thickness, max_thickness):
+    '''
+    se dibujan las fibras y se suma todos los grosores (diametros)
+    retorna la suma
+    '''
     sum_thickness = 0
     for wave in waves:
         wave = np.array(wave).astype(int)
@@ -31,7 +36,7 @@ def drawFibers(sample_image, waves, min_thickness, max_thickness):
         
 def drawSampleFibers(sample_image, waves, thickness_list, skeleton=False):
     '''
-    dibuja las fibras ondeadas sobre una imagen
+    dibuja las fibras ondeadas sobre una imagen completas o tan solo su esqueleto con el valor de su grosor
     '''    
     for i,wave in enumerate(waves):
         wave = np.array(wave).astype(int)
@@ -102,14 +107,14 @@ def createSamplesAndVariableSkeletons(
     extension="png",
     printout=False):
     '''
-    Create samples with respective skeletons with different values that represents fiber diameter
+    Create samples with respective skeletons with different pixel values that represents fiber diameter
     '''
     
     fiber_sample = FiberSample(size[0], size[1], printout)
     
     for i in range(total_samples):
         
-        print(f'i={i}')
+        #print(f'i={i}')
         
         len_waves = randint(fibers_range[0],fibers_range[1])
         
@@ -130,7 +135,38 @@ def createSamplesAndVariableSkeletons(
         cv2.imwrite(dir_samples + "/" + str(i + 1).zfill(4) + "." + extension, sample_image)
         cv2.imwrite(dir_skeletons + "/" + str(i + 1).zfill(4) + "." + extension, skeleton_image)
         
+def randcolors(n):
+    '''
+    Se obtiene una lista de 'n' colores usando HSV
+    '''
+    colors = []
+    for h in range(0, 360, int(360/n)):
+        color = tuple(round(i) for i in colorsys.hsv_to_rgb(h/360,1,255))
+        colors.append(color)
+    return colors       
+        
+def drawSampleAndMask(sample_image, mask_image, waves, fiber_thickness):
+    colors = randcolors(len(waves))
+    for i,wave in enumerate(waves):
+        wave = np.array(wave).astype(int)
+        wave = wave.reshape((-1,1,2))
+        color_sample = (255,255,255)
+        color_mask = colors[i]
+        thickness = randint(fiber_thickness[0],fiber_thickness[1])
+        cv2.polylines(sample_image, [wave], False, color_sample, thickness, cv2.LINE_8)
+        cv2.polylines(mask_image, [wave], False, color_mask, thickness, cv2.LINE_8)
 
+def createSamplesAndMasks(samples_dir,masks_dir,samples,sample_size,sample_fibers,fiber_thickness,extension='png',printout=False):
     
+    sample = FiberSample(sample_size[0], sample_size[1], printout)
+    
+    for i in range(samples):
 
+        sample_image = np.zeros((sample_size[0], sample_size[1], 3), np.uint8)
+        mask_image = np.zeros((sample_size[0], sample_size[1], 3), np.uint8)
+        
+        waves = sample.createRandomWaves(randint(sample_fibers[0],sample_fibers[1]))
+        drawSampleAndMask(sample_image, mask_image, waves, fiber_thickness)
     
+        cv2.imwrite(samples_dir + "/" + str(i + 1).zfill(4) + "." + extension, sample_image)
+        cv2.imwrite(masks_dir + "/" + str(i + 1).zfill(4) + "." + extension, mask_image)
