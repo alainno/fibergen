@@ -4,6 +4,7 @@ import math
 import numpy as np
 from tqdm import tqdm
 import os, shutil
+import cv2
 
 class FiberSample():
     '''
@@ -261,6 +262,42 @@ class FiberSample():
 
     def getWavePoints(self):
         pass
+    
+    def setFibers(self,fibers):
+        self.fibers = fibers
+    
+    def setDiameters(self, diameters):
+        self.diameters = diameters
+    
+    def createSegmentationSample(self):
+        self.segmentation_img = Image.new('RGB', (self.width,self.height), 'white')
+        draw = ImageDraw.Draw(self.segmentation_img)
+        self.segmentation_mask = np.zeros((self.height, self.width, 3), np.uint8)
+        
+        waves_number = randint(self.fibers[0], self.fibers[1])
+        waves = self.createRandomWaves(waves_number)
+        
+        for wave in waves:
+            diameter = randint(self.diameters[0], self.diameters[1])
+            gray = randint(0,100)
+            
+            draw.line(wave, fill=(gray, gray, gray), width=diameter, joint='curve')
+    
+            wave = np.array(wave).astype(int)
+            wave = wave.reshape((-1,1,2))
+            cv2.polylines(self.segmentation_mask,[wave],False,(255,255,255),diameter,cv2.LINE_AA)
+    
+            
+    
+    def saveSegmentationSample(self, imgs_dir, masks_dir, index, extension='png'):
+        '''
+        Guarda la imágen y su máscara de segmentación
+        '''
+        #self.segmentation_img = Image.new('RGB', (5, 5), "white")
+        filename = str(index+1).zfill(4) + '.' + extension
+        self.segmentation_img.save(os.path.join(imgs_dir, filename))
+        #self.segmentation_mask = np.zeros((5,5,3), np.uint8)
+        cv2.imwrite(os.path.join(masks_dir, filename), self.segmentation_mask)
 
 
 if __name__ == "__main__":
