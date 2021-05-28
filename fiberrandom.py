@@ -5,6 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import os, shutil
 import cv2
+import colorsys
 
 class FiberSample():
     '''
@@ -286,8 +287,7 @@ class FiberSample():
             wave = np.array(wave).astype(int)
             wave = wave.reshape((-1,1,2))
             cv2.polylines(self.segmentation_mask,[wave],False,(255,255,255),diameter,cv2.LINE_AA)
-    
-            
+                
     
     def saveSegmentationSample(self, imgs_dir, masks_dir, index, extension='png'):
         '''
@@ -298,6 +298,52 @@ class FiberSample():
         self.segmentation_img.save(os.path.join(imgs_dir, filename))
         #self.segmentation_mask = np.zeros((5,5,3), np.uint8)
         cv2.imwrite(os.path.join(masks_dir, filename), self.segmentation_mask)
+        
+    def createDistanceMapSample(self):
+        size = (self.height, self.width, 3)
+
+        self.dm_img = np.zeros(size, np.uint8)
+        self.dm_mask = np.zeros(size, np.uint8)
+
+        fibers = randint(self.fibers[0],self.fibers[1])
+        waves = self.createRandomWaves(fibers)
+
+        colors = self.randcolors(fibers)
+
+        for i,wave in enumerate(waves):
+            diameter = randint(self.diameters[0], self.diameters[1])
+            
+            wave = np.array(wave).astype(int)
+            wave = wave.reshape((-1,1,2))
+            
+            cv2.polylines(self.dm_img, [wave], False, colors[i], diameter, cv2.LINE_8)
+            
+            image = np.zeros((256,256,1), np.uint8)
+            cv2.polylines(image,[wave],False,(255,255,255),diameter,cv2.LINE_AA)
+            image = cv2.distanceTransform(image,cv2.DIST_L2,3)
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+            foreground = image[:,:]>0
+            self.dm_mask[foreground] = image[foreground]
+        
+        cv2.normalize(self.dm_mask, self.dm_mask, 0, 255, cv2.NORM_MINMAX)
+            
+    def saveDistanceMapSample(self, imgs_dir, masks_dir, index, extension='png'):
+        '''
+        Guarda la imágen y su máscara (mapa de distancia)
+        '''
+        filename = str(index+1).zfill(4) + '.' + extension
+        cv2.imwrite(os.path.join(imgs_dir, filename), self.dm_img)
+        cv2.imwrite(os.path.join(masks_dir, filename), self.dm_mask)
+        
+    def randcolors(self, n):
+        '''
+        Se obtiene una lista de 'n' colores usando HSV
+        '''
+        colors = []
+        for h in range(0, 360, int(360/n)):
+            color = tuple(round(i) for i in colorsys.hsv_to_rgb(h/360,1,255))
+            colors.append(color)
+        return colors
 
 
 if __name__ == "__main__":
