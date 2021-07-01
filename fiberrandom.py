@@ -316,15 +316,27 @@ class FiberSample():
             wave = np.array(wave).astype(int)
             wave = wave.reshape((-1,1,2))
             
-            cv2.polylines(self.dm_img, [wave], False, colors[i], diameter, cv2.LINE_8)
+            #cv2.polylines(self.dm_img, [wave], False, colors[i], diameter, cv2.LINE_8)
             
             image = np.zeros((256,256,1), np.uint8)
             cv2.polylines(image,[wave],False,(255,255,255),diameter,cv2.LINE_AA)
+            
+            lbl = image.copy()
+            lbl = lbl.reshape(256,256)
+            col = self.TruncatedNormal(loc=127, scale=100, size=3, min_v=1, max_v=255)
+            nrow = lbl[lbl==255].shape[0]
+            RANDOM = np.zeros(shape=(nrow, 3))
+            for j in range(3):
+                RANDOM[:, j] = self.TruncatedNormal(loc=col[j], scale=10, size=nrow, min_v=1, max_v=255)
+            self.dm_img[lbl==255] = RANDOM
+            
+            
             image = cv2.distanceTransform(image,cv2.DIST_L2,3)
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
             foreground = image[:,:]>0
             self.dm_mask[foreground] = image[foreground]
         
+        self.dm_img = self.Noise(self.dm_img, 5)
         cv2.normalize(self.dm_mask, self.dm_mask, 0, 255, cv2.NORM_MINMAX)
             
     def saveDistanceMapSample(self, imgs_dir, masks_dir, index, extension='png'):
@@ -344,6 +356,36 @@ class FiberSample():
             color = tuple(round(i) for i in colorsys.hsv_to_rgb(h/360,1,255))
             colors.append(color)
         return colors
+    
+    def TruncatedNormal(self, loc, scale, size, min_v, max_v):
+        vec = np.random.normal(loc=loc, scale=scale, size=size)
+        def f(val):
+            if min_v > val:
+                return True
+            elif val > max_v:
+                return True
+            else:
+                return False
+        res = np.array(map(f, vec))
+        if True in res:
+            n_size = res.sum()
+            vec[res] = TruncatedNormal(loc, scale, n_size, min_v, max_v)
+        return vec
+    
+    def Noise(self, img, std):
+        fl = img.flatten()
+        vec = np.random.normal(loc=0, scale=std, size=len(fl))
+        def g(val):
+            if 0 > val:
+                return -val
+            else:
+                return val
+        noise = list(map(g, vec))
+        noise = np.array(noise)
+        res = fl + noise
+        res = res.reshape(img.shape)
+        res[res > 255.] = 255.
+        return res.astype('uint8')
 
 
 if __name__ == "__main__":
