@@ -180,21 +180,20 @@ class FiberSample():
         for wave_points in waves:
             draw.line(wave_points, fill=(255, 255, 255), width=randint(min_width, max_width))
 
-    def createRandomWaves(self, total):
+    def createRandomWaves(self, total, return_longitude=False):
+        '''
+        Crea un 'total' de waves con los puntos rotados
+        '''
         waves = []
 
-        #waves.append([1, 1, 20, 20, 30, 30, 40, 40])
-        #waves.append([50, 1, 70, 20, 80, 30, 90, 40])
-
         for i in range(total):
-            ancho = randint(3, 6)/100
+            ancho = randint(3, 6)/100 # revisar si es necesario
             alto = (randint(5,60)/100)/ancho
-            waves.append(self.createFiberWave(ancho, alto))
+            waves.append(self.createFiberWave(ancho, alto, return_longitude))
         return waves
 
-    def createFiberWave(self, ancho=0.05, alto=5):
+    def createFiberWave(self, ancho=0.05, alto=5, return_longitude=False):
 
-        #fiberSample = FiberSample(256, 256)
         # trazar una línea aleatoria con u radomness
         points = self.createRandomLine()
         #print('Recta aleatoria:', points)
@@ -212,7 +211,6 @@ class FiberSample():
         # print('time:', time)
 
         # generar amplitud
-        #amplitude = np.sin(0.05 * time)
         amplitude = np.sin(ancho * time)
         # print('amplitud:', amplitude)
 
@@ -224,23 +222,28 @@ class FiberSample():
         if self.printout:
             print('angle:', math.degrees(angle))
 
-        # rotar
-
+        # rotar cada punto de la curva
         sine_points = []
         rotated_points = []
-        #pond = 5
         pond = alto
-        #mitad = fiberSample.height / 2
+        longitude = 0
 
         for i, a in enumerate(amplitude):
             sine_points.append(time[i] + x1)
             sine_points.append(y1 - round(a * pond))
+            
+            if i > 0:
+                dx = time[i] - time[i-1]
+                dy = amplitude[i] - amplitude[i-1]
+                longitude += math.sqrt(dx**2 + dy**2)
 
             point = self.rotate((0, 0), (time[i], round(a * pond)), -angle)
 
             rotated_points.append(point[0] + x1)
             rotated_points.append(y1 - point[1])
 
+        if return_longitude:
+            return (rotated_points, longitude)
         return rotated_points
 
     # obtiene la distancia euclideana entre dos puntos
