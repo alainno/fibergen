@@ -6,6 +6,7 @@ from tqdm import tqdm
 import os, shutil
 import cv2
 import colorsys
+import h5py
 
 class FiberSample():
     '''
@@ -303,15 +304,14 @@ class FiberSample():
         cv2.imwrite(os.path.join(masks_dir, filename), self.segmentation_mask)
         
     def createDistanceMapSample(self):
-        size = (self.height, self.width, 3)
+        """ simular micrografia y ground truth como mapa de distancia fibra por fibra """
+        size = (self.height, self.width)
 
-        self.dm_img = np.zeros(size, np.uint8)
-        self.dm_mask = np.zeros(size, np.uint8)
+        self.dm_img = np.zeros((*size,3), np.uint8)
+        self.dm_mask = np.zeros(size, np.float32)
 
         fibers = randint(self.fibers[0],self.fibers[1])
         waves = self.createRandomWaves(fibers)
-
-        colors = self.randcolors(fibers)
 
         for i,wave in enumerate(waves):
             diameter = randint(self.diameters[0], self.diameters[1])
@@ -319,28 +319,15 @@ class FiberSample():
             wave = np.array(wave).astype(int)
             wave = wave.reshape((-1,1,2))
             
-            #cv2.polylines(self.dm_img, [wave], False, colors[i], diameter, cv2.LINE_8)
+            fiber = np.zeros(size, np.uint8)
+            cv2.polylines(fiber,[wave],False,(255,255,255),diameter,cv2.LINE_8)
             
-            image = np.zeros((256,256,1), np.uint8)
-            cv2.polylines(image,[wave],False,(255,255,255),diameter,cv2.LINE_AA)
+            self.dm_img[fiber==255] = self.AddNoiseFiber(fiber)
             
-            lbl = image.copy()
-            lbl = lbl.reshape(256,256)
-            col = self.TruncatedNormal(loc=127, scale=100, size=3, min_v=1, max_v=255)
-            nrow = lbl[lbl==255].shape[0]
-            RANDOM = np.zeros(shape=(nrow, 3))
-            for j in range(3):
-                RANDOM[:, j] = self.TruncatedNormal(loc=col[j], scale=10, size=nrow, min_v=1, max_v=255)
-            self.dm_img[lbl==255] = RANDOM
-            
-            
-            image = cv2.distanceTransform(image,cv2.DIST_L2,3)
-            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-            foreground = image[:,:]>0
-            self.dm_mask[foreground] = image[foreground]
+            fiber_dm = cv2.distanceTransform(fiber,cv2.DIST_L2,3)
+            self.dm_mask[fiber==255] = fiber_dm[fiber==255]
         
         self.dm_img = self.Noise(self.dm_img, 5)
-        cv2.normalize(self.dm_mask, self.dm_mask, 0, 255, cv2.NORM_MINMAX)
             
     def saveDistanceMapSample(self, imgs_dir, masks_dir, index, extension='png'):
         '''
@@ -348,7 +335,9 @@ class FiberSample():
         '''
         filename = str(index+1).zfill(4) + '.' + extension
         cv2.imwrite(os.path.join(imgs_dir, filename), self.dm_img)
-        cv2.imwrite(os.path.join(masks_dir, filename), self.dm_mask)
+        cv2.imwrite(os.path.join(masks_dir, filename), (self.dm_mask * 0.01) * 255)
+        with h5py.File(os.path.join(masks_dir, filename.replace('.png','.h5')), 'w') as hf:
+            hf['dm'] = self.dm_mask
         
     def randcolors(self, n):
         '''
@@ -372,7 +361,7 @@ class FiberSample():
         res = np.array(map(f, vec))
         if True in res:
             n_size = res.sum()
-            vec[res] = TruncatedNormal(loc, scale, n_size, min_v, max_v)
+            vec[res] = self.TruncatedNormal(loc, scale, n_size, min_v, max_v)
         return vec
     
     def Noise(self, img, std):
@@ -390,6 +379,14 @@ class FiberSample():
         res[res > 255.] = 255.
         return res.astype('uint8')
 
+    def AddNoiseFiber(self, fiber):
+        lbl = fiber.copy()
+        col = self.TruncatedNormal(loc=127, scale=100, size=3, min_v=1, max_v=255)
+        nrow = lbl[lbl==255].shape[0]
+        RANDOM = np.zeros(shape=(nrow, 3))
+        for j in range(3):
+            RANDOM[:, j] = self.TruncatedNormal(loc=col[j], scale=10, size=nrow, min_v=1, max_v=255)
+        return RANDOM
 
 if __name__ == "__main__":
 
