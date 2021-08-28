@@ -329,15 +329,17 @@ class FiberSample():
         
         self.dm_img = self.Noise(self.dm_img, 5)
             
-    def saveDistanceMapSample(self, imgs_dir, masks_dir, index, extension='png'):
+    def saveDistanceMapSample(self, imgs_dir, masks_dir, index, extension='png', masks_h5=False):
         '''
         Guarda la imágen y su máscara (mapa de distancia)
         '''
         filename = str(index+1).zfill(4) + '.' + extension
         cv2.imwrite(os.path.join(imgs_dir, filename), self.dm_img)
-        cv2.imwrite(os.path.join(masks_dir, filename), (self.dm_mask * 0.01) * 255)
-        with h5py.File(os.path.join(masks_dir, filename.replace('.png','.h5')), 'w') as hf:
-            hf['dm'] = self.dm_mask
+        if masks_h5:
+            with h5py.File(os.path.join(masks_dir, filename.replace('.png','.h5')), 'w') as hf:
+                hf['dm'] = self.dm_mask
+        else:
+            cv2.imwrite(os.path.join(masks_dir, filename), (self.dm_mask * 0.01) * 255)
         
     def randcolors(self, n):
         '''
