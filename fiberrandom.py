@@ -303,7 +303,7 @@ class FiberSample():
         #self.segmentation_mask = np.zeros((5,5,3), np.uint8)
         cv2.imwrite(os.path.join(masks_dir, filename), self.segmentation_mask)
         
-    def createDistanceMapSample(self):
+    def createDistanceMapSample(self, return_diameter_mean=False):
         """ simular micrografia y ground truth como mapa de distancia fibra por fibra """
         size = (self.height, self.width)
 
@@ -311,12 +311,17 @@ class FiberSample():
         self.dm_mask = np.zeros(size, np.float32)
 
         fibers = randint(self.fibers[0],self.fibers[1])
-        waves = self.createRandomWaves(fibers)
+        waves = self.createRandomWaves(fibers, return_longitude = return_diameter_mean)
 
-        for i,wave in enumerate(waves):
+        diameter_sum = 0
+        length_sum = 0
+        
+        for wave in waves:
             diameter = randint(self.diameters[0], self.diameters[1])
+            length_sum += wave[1]
+            diameter_sum += diameter*wave[1]
             
-            wave = np.array(wave).astype(int)
+            wave = np.array(wave[0]).astype(int)
             wave = wave.reshape((-1,1,2))
             
             fiber = np.zeros(size, np.uint8)
@@ -328,6 +333,9 @@ class FiberSample():
             self.dm_mask[fiber==255] = fiber_dm[fiber==255]
         
         self.dm_img = self.Noise(self.dm_img, 5)
+        
+        if return_diameter_mean:
+            return (diameter_sum/length_sum)
             
     def saveDistanceMapSample(self, imgs_dir, masks_dir, index, extension='png', masks_h5=False):
         '''
