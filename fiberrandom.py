@@ -7,6 +7,7 @@ import os, shutil
 import cv2
 import colorsys
 import h5py
+import pickle
 
 class FiberSample():
     '''
@@ -315,11 +316,13 @@ class FiberSample():
 
         diameter_sum = 0
         length_sum = 0
+        self.diameter_count = {}
         
         for wave in waves:
             diameter = randint(self.diameters[0], self.diameters[1])
             length_sum += wave[1]
             diameter_sum += diameter*wave[1]
+            self.diameter_count[diameter] = self.diameter_count.get(diameter,0) + wave[1]
             
             wave = np.array(wave[0]).astype(int)
             wave = wave.reshape((-1,1,2))
@@ -348,6 +351,11 @@ class FiberSample():
                 hf['dm'] = self.dm_mask
         else:
             cv2.imwrite(os.path.join(masks_dir, filename), (self.dm_mask * 0.01) * 255)
+        
+        # save diameter count
+        a_file = open(os.path.join(masks_dir, 'dc' + filename.replace('.png','.pkl')), 'wb')
+        pickle.dump(self.diameter_count, a_file)
+        a_file.close()
         
     def randcolors(self, n):
         '''
