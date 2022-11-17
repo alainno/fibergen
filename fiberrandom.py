@@ -189,20 +189,30 @@ class FiberSample():
         waves = []
 
         for i in range(total):
-            ancho = randint(3, 6)/100 # revisar si es necesario
-            alto = (randint(5,60)/100)/ancho
-            waves.append(self.createFiberWave(ancho, alto, return_longitude))
+#             ancho = randint(3, 6)/100 # revisar si es necesario
+#             alto = (randint(5,60)/100)/ancho
+#             waves.append(self.createFiberWave(ancho, alto, return_longitude))
+
+            points = self.createRandomLine()
+            perp_points = self.getPerpendicular(points)
+            waves.append(self.createRandomWave(perp_points, return_longitude))
         return waves
+     
 
-    def createFiberWave(self, ancho=0.05, alto=5, return_longitude=False):
-
+#     def createFiberWave(self, ancho=0.05, alto=5, return_longitude=False):
+    def createRandomWave(self, perp_points, return_longitude=False):
+    
+        ancho = randint(3, 6)/100 # revisar si es necesario
+        alto = (randint(5,60)/100)/ancho    
+    
         # trazar una línea aleatoria con u radomness
-        points = self.createRandomLine()
-        #print('Recta aleatoria:', points)
+#         points = self.createRandomLine()
+#         if self.printout:
+#             print('Recta aleatoria:', points)
 
-        perp_points = self.getPerpendicular(points)
-        if self.printout:
-            print('Recta perpendicular:', perp_points)
+#         perp_points = self.getPerpendicular(points)
+#         if self.printout:
+#             print('Recta perpendicular:', perp_points)
 
         # trazar onda senoidal
         # obtener la longitud de la recta aleatoria (time)
@@ -210,11 +220,13 @@ class FiberSample():
         if self.printout:
             print('distance:', round(distance))
         time = np.arange(0, distance, 1)
-        # print('time:', time)
+        if self.printout:
+            print('time:', time)
 
         # generar amplitud
         amplitude = np.sin(ancho * time)
-        # print('amplitud:', amplitude)
+        if self.printout:
+            print('amplitud:', amplitude)
 
         # obtener angulo de la recta aleatoria
         x1, y1 = perp_points[0]
@@ -248,8 +260,10 @@ class FiberSample():
             return (rotated_points, longitude)
         return rotated_points
 
-    # obtiene la distancia euclideana entre dos puntos
     def getDistance(self, line):
+        '''
+        obtiene la distancia euclideana entre dos puntos
+        '''
         x1, y1 = line[0]
         x2, y2 = line[1]
         return math.sqrt((x2-x1)**2 + (y2-y1)**2)
@@ -276,6 +290,9 @@ class FiberSample():
         self.diameters = diameters
     
     def createSegmentationSample(self):
+        '''
+        Crear ejemplo de fibras segmentadas
+        '''
         self.segmentation_img = Image.new('RGB', (self.width,self.height), 'white')
         draw = ImageDraw.Draw(self.segmentation_img)
         self.segmentation_mask = np.zeros((self.height, self.width, 3), np.uint8)
@@ -406,6 +423,52 @@ class FiberSample():
             RANDOM[:, j] = self.TruncatedNormal(loc=col[j], scale=10, size=nrow, min_v=1, max_v=255)
         return RANDOM
 
+#     def createMuRandomnessSample(self):
+#         size = (self.height, self.width)
+#         sample = np.zeros(size)
+        
+#         lines_number = randint(self.fibers[0],self.fibers[1])
+#         lines_list = self.createRandomLines(lines_number)
+#         for line in lines_list:
+#             x1,y1 = line[0]
+#             x2,y2 = line[1]
+#             cv2.line(sample, (x1,y1), (x2, y2), (255,255,255), 1)
+#         return sample
+    
+    def createRandomLines(self, total):
+        lines_list = []
+        for i in range(total):
+            points = self.createRandomLine()
+            perp_points = self.getPerpendicular(points)
+            lines_list.append(perp_points)
+        return lines_list
+    
+    def createProcessSamples(self):
+        size = (self.height, self.width)
+        sample_lines = np.zeros(size)
+        sample_curls = np.zeros(size)
+        sample_instances = np.zeros((*size,3), np.uint8)
+        
+        lines_number = randint(self.fibers[0],self.fibers[1])
+        lines_list = self.createRandomLines(lines_number)
+        for line in lines_list:
+            x1,y1 = line[0]
+            x2,y2 = line[1]
+            # draw lines
+            cv2.line(sample_lines, (x1,y1), (x2, y2), (255,255,255), 1)
+            # draw curls
+            wave = self.createRandomWave(line)
+            wave = np.array(wave).astype(int)
+            wave = wave.reshape((-1,1,2))
+            cv2.polylines(sample_curls,[wave],False,(255,255,255),1,cv2.LINE_AA)
+            # draw color fiber instances
+            diameter = randint(self.diameters[0], self.diameters[1])
+            fiber = np.zeros(size, np.uint8)
+            cv2.polylines(fiber,[wave],False,(255,255,255),diameter,cv2.LINE_8)
+            sample_instances[fiber==255] = self.AddNoiseFiber(fiber)
+            
+        return sample_lines, sample_curls, sample_instances
+    
 if __name__ == "__main__":
 
     from functions import emptyDir
