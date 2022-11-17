@@ -4,3 +4,4 @@ __pycache__/
 data/
 data_dm/
 data_segmentation/
+tmp/
